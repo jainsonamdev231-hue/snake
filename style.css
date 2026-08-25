@@ -1,20 +1,15 @@
-/* --- CSS Variables for Theme --- */
 :root {
   --bg-color: #1a1a2e;
   --panel-bg: #16213e;
   --text-color: #e94560;
-  --snake-color: #4cd137;
+  --snake-head: #4cd137;
+  --snake-body: #44bd32;
   --food-color: #e84118;
+  --bonus-color: #fbc531; /* Golden color for bonus food */
   --grid-color: rgba(255, 255, 255, 0.05);
 }
 
-/* --- Global Reset --- */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
 body {
   background-color: var(--bg-color);
@@ -23,11 +18,9 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  /* Prevent screen bouncing on mobile */
   overflow: hidden; 
 }
 
-/* --- Main Layout --- */
 .game-container {
   background-color: var(--panel-bg);
   padding: 20px;
@@ -38,7 +31,6 @@ body {
   gap: 15px;
 }
 
-/* --- Header & Scoreboard --- */
 .header {
   display: flex;
   justify-content: space-between;
@@ -47,19 +39,10 @@ body {
   font-weight: bold;
 }
 
-.score-board {
-  display: flex;
-  gap: 20px;
-}
+.score-board { display: flex; gap: 20px; }
+.high-score { color: var(--text-color); }
 
-.high-score {
-  color: var(--text-color);
-}
-
-/* --- Canvas & Overlays --- */
-.canvas-wrapper {
-  position: relative; /* Allows absolute positioning of overlays inside */
-}
+.canvas-wrapper { position: relative; }
 
 canvas {
   background-color: #0f0f1a;
@@ -81,16 +64,9 @@ canvas {
   gap: 15px;
 }
 
-.overlay h2 {
-  font-size: 2.5rem;
-  color: var(--text-color);
-}
+.overlay h2 { font-size: 2.5rem; color: var(--text-color); }
+.hidden { display: none !important; }
 
-.hidden {
-  display: none !important;
-}
-
-/* --- Buttons --- */
 .btn {
   background-color: transparent;
   color: white;
@@ -101,35 +77,12 @@ canvas {
   font-size: 1rem;
   transition: all 0.2s ease;
 }
-
 .btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+.btn.primary { background-color: var(--text-color); border-color: var(--text-color); font-size: 1.2rem; padding: 10px 24px; }
+.btn.primary:hover { background-color: #d13d56; transform: scale(1.05); }
 
-.btn.primary {
-  background-color: var(--text-color);
-  border-color: var(--text-color);
-  font-size: 1.2rem;
-  padding: 10px 24px;
-}
-
-.btn.primary:hover {
-  background-color: #d13d56;
-  transform: scale(1.05);
-}
-
-/* --- Mobile Controls (D-Pad) --- */
-.controls {
-  display: none; /* Hidden on desktop */
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  margin-top: 10px;
-}
-
-.d-pad-row {
-  display: flex;
-  gap: 30px;
-}
-
+.controls { display: none; flex-direction: column; align-items: center; gap: 5px; margin-top: 10px; }
+.d-pad-row { display: flex; gap: 30px; }
 .d-pad {
   width: 60px; height: 60px;
   background-color: rgba(255, 255, 255, 0.1);
@@ -137,18 +90,11 @@ canvas {
   border-radius: 50%;
   color: white;
   font-size: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: flex; justify-content: center; align-items: center;
 }
-
 .d-pad:active { background-color: rgba(255, 255, 255, 0.3); }
 
-/* Show mobile controls only on screens smaller than 600px */
 @media (max-width: 600px) {
   .controls { display: flex; }
-  canvas {
-    width: 100%; /* Make canvas responsive */
-    height: auto;
-  }
+  canvas { width: 100%; height: auto; }
 }
