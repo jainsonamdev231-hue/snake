@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Advanced Snake Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Main Game Container -->
+  <div class="game-container">
+    
+    <!-- Top Information Bar -->
+    <div class="header">
+      <div class="score-board">
+        <div>Score: <span id="score">0</span></div>
+        <div class="high-score">Best: <span id="high-score">0</span></div>
+      </div>
+      <button id="pause-btn" class="btn">Pause</button>
+    </div>
+
+    <!-- Canvas Wrapper for Positioning Overlays -->
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+      
+      <!-- Start Screen Overlay -->
+      <div id="start-screen" class="overlay">
+        <h2>Snake</h2>
+        <p>Use Arrow Keys or D-Pad to move.</p>
+        <button id="start-btn" class="btn primary">Start Game</button>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div id="game-over-screen" class="overlay hidden">
+        <h2>Game Over!</h2>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn" class="btn primary">Play Again</button>
+      </div>
+    </div>
+
+    <!-- Mobile On-Screen Controls (Visible only on smaller screens) -->
+    <div class="controls">
+      <button class="d-pad" id="btn-up">▲</button>
+      <div class="d-pad-row">
+        <button class="d-pad" id="btn-left">◀</button>
+        <button class="d-pad" id="btn-down">▼</button>
+        <button class="d-pad" id="btn-right">▶</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
