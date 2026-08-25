@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Advanced Snake Game</title>
+  <title>Modern Advanced Snake</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Main Game Container -->
   <div class="game-container">
     
     <!-- Top Information Bar -->
@@ -20,18 +19,17 @@
       <button id="pause-btn" class="btn">Pause</button>
     </div>
 
-    <!-- Canvas Wrapper for Positioning Overlays -->
+    <!-- Canvas & Menus -->
     <div class="canvas-wrapper">
       <canvas id="gameCanvas" width="400" height="400"></canvas>
       
-      <!-- Start Screen Overlay -->
+      <!-- Start Screen -->
       <div id="start-screen" class="overlay">
         <h2>Snake</h2>
-        <p>Use Arrow Keys or D-Pad to move.</p>
         <button id="start-btn" class="btn primary">Start Game</button>
       </div>
 
-      <!-- Game Over Overlay -->
+      <!-- Game Over Screen -->
       <div id="game-over-screen" class="overlay hidden">
         <h2>Game Over!</h2>
         <p>Final Score: <span id="final-score">0</span></p>
@@ -39,7 +37,7 @@
       </div>
     </div>
 
-    <!-- Mobile On-Screen Controls (Visible only on smaller screens) -->
+    <!-- Mobile Controls -->
     <div class="controls">
       <button class="d-pad" id="btn-up">▲</button>
       <div class="d-pad-row">
