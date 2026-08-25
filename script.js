@@ -1,4 +1,3 @@
-// --- DOM Elements ---
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
@@ -7,61 +6,67 @@ const finalScoreEl = document.getElementById("final-score");
 const startScreen = document.getElementById("start-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
 
-// --- Game Settings & Variables ---
 const gridSize = 20; 
 const tileCount = canvas.width / gridSize;
-const SNAKE_SPEED = 10; // Number of times the snake moves per second
+let baseSpeed = 10; // Starting speed
 
 let snake = [];
 let food = {};
+let bonusFood = null;
+let bonusTimeout = null;
 let inputDirection = { x: 0, y: 0 };
 let lastRenderTime = 0;
 let score = 0;
 let highScore = localStorage.getItem('snakeHighScore') || 0;
 highScoreEl.innerText = highScore;
 
-// Game States
 let isGameRunning = false;
 let isPaused = false;
 let isGameOver = false;
 
-// --- Core Game Loop ---
-// requestAnimationFrame provides smoother rendering than setInterval
+// --- Sound Effects ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(frequency, type, duration) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.type = type; 
+  oscillator.frequency.value = frequency;
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.start();
+  gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+  oscillator.stop(audioCtx.currentTime + duration);
+}
+
+// --- Main Game Loop ---
 function mainLoop(currentTime) {
   if (isGameOver) {
     showGameOver();
-    return; // Stop the loop
+    return; 
   }
-
   window.requestAnimationFrame(mainLoop);
-
   if (!isGameRunning || isPaused) return;
 
-  // Calculate time since last frame to control the snake's speed
   const secondsSinceLastRender = (currentTime - lastRenderTime) / 1000;
-  if (secondsSinceLastRender < 1 / SNAKE_SPEED) return; // Skip frame if too soon
+  if (secondsSinceLastRender < 1 / baseSpeed) return; 
   
   lastRenderTime = currentTime;
-
   update();
   draw();
 }
 
-// --- Game Logic Updates ---
 function update() {
-  // Move snake by adding a new head based on direction
-  const head = { 
-    x: snake[0].x + inputDirection.x, 
-    y: snake[0].y + inputDirection.y 
-  };
+  const head = { x: snake[0].x + inputDirection.x, y: snake[0].y + inputDirection.y };
 
-  // 1. Check if snake hit a wall
-  if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-    isGameOver = true;
-    return;
-  }
+  // Feature 1: Wall Wrapping (सांप आर-पार जाएगा)
+  if (head.x < 0) head.x = tileCount - 1;
+  else if (head.x >= tileCount) head.x = 0;
+  
+  if (head.y < 0) head.y = tileCount - 1;
+  else if (head.y >= tileCount) head.y = 0;
 
-  // 2. Check if snake bit itself
+  // Self Collision
   for (let i = 0; i < snake.length; i++) {
     if (head.x === snake[i].x && head.y === snake[i].y) {
       isGameOver = true;
@@ -69,28 +74,42 @@ function update() {
     }
   }
 
-  // Add the new head to the snake array
   snake.unshift(head);
 
-  // 3. Check if snake ate food
+  // Eating Normal Food
   if (head.x === food.x && head.y === food.y) {
     score += 10;
     scoreEl.innerText = score;
-    placeFood(); // Spawn new food
-    // We intentionally DON'T pop the tail here, so the snake grows
+    playTone(600, 'sine', 0.1);
+    placeFood();
+    
+    // Feature 2: Speed Increase 
+    if (baseSpeed < 25) baseSpeed += 0.3;
+
+    // Feature 3: Bonus Food Spawning
+    if (!bonusFood && Math.random() < 0.20) {
+      spawnBonusFood();
+    }
   } else {
-    // If no food eaten, remove the tail so the snake stays the same length
     snake.pop(); 
+  }
+
+  // Eating Bonus Food
+  if (bonusFood && head.x === bonusFood.x && head.y === bonusFood.y) {
+    score += 50;
+    scoreEl.innerText = score;
+    playTone(900, 'sine', 0.2); 
+    bonusFood = null;
+    clearTimeout(bonusTimeout);
+    snake.push({ ...snake[snake.length - 1] }); 
   }
 }
 
-// --- Drawing / Rendering ---
 function draw() {
-  // 1. Clear the canvas (draw background)
   ctx.fillStyle = "#0f0f1a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // (Optional) Draw Grid Lines for a retro feel
+  // Draw Grid Lines (Modern Look)
   ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
   for(let i = 0; i < tileCount; i++) {
     ctx.beginPath();
@@ -99,53 +118,59 @@ function draw() {
     ctx.stroke();
   }
 
-  // 2. Draw Food
-  ctx.fillStyle = "#e84118"; // Red color from CSS theme
-  // Add a slight margin so it looks like a distinct block
-  ctx.fillRect(food.x * gridSize + 1, food.y * gridSize + 1, gridSize - 2, gridSize - 2);
+  // Draw Normal Food
+  ctx.fillStyle = "#e84118"; 
+  ctx.beginPath();
+  ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+  ctx.fill();
 
-  // 3. Draw Snake
+  // Draw Bonus Food (Golden and pulsing effect)
+  if (bonusFood) {
+    ctx.fillStyle = "#fbc531";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#fbc531";
+    ctx.fillRect(bonusFood.x * gridSize + 2, bonusFood.y * gridSize + 2, gridSize - 4, gridSize - 4);
+    ctx.shadowBlur = 0; // Reset shadow
+  }
+
+  // Draw Snake
   snake.forEach((segment, index) => {
-    // Make the head slightly lighter than the body
     ctx.fillStyle = index === 0 ? "#4cd137" : "#44bd32"; 
     ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
   });
 }
 
-// --- Helper Functions ---
 function placeFood() {
-  let newFoodPosition;
-  while (newFoodPosition == null || onSnake(newFoodPosition)) {
-    newFoodPosition = {
-      x: Math.floor(Math.random() * tileCount),
-      y: Math.floor(Math.random() * tileCount)
-    };
+  let validSpot = false;
+  while (!validSpot) {
+    food = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+    validSpot = !snake.some(segment => segment.x === food.x && segment.y === food.y);
   }
-  food = newFoodPosition;
 }
 
-// Checks if a given position is currently occupied by the snake
-function onSnake(position) {
-  return snake.some(segment => {
-    return segment.x === position.x && segment.y === position.y;
-  });
+function spawnBonusFood() {
+  let validSpot = false;
+  while (!validSpot) {
+    bonusFood = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+    validSpot = !snake.some(segment => segment.x === bonusFood.x && segment.y === bonusFood.y) 
+                && (food.x !== bonusFood.x || food.y !== bonusFood.y);
+  }
+  
+  bonusTimeout = setTimeout(() => { bonusFood = null; }, 5000);
 }
 
 function startGame() {
-  // Reset Variables
-  snake = [
-    { x: 10, y: 10 },
-    { x: 10, y: 11 }, // Start with a length of 3
-    { x: 10, y: 12 }
-  ];
-  inputDirection = { x: 0, y: -1 }; // Start moving up
+  snake = [ { x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 } ];
+  inputDirection = { x: 0, y: -1 }; 
   score = 0;
+  baseSpeed = 10;
   scoreEl.innerText = score;
   isGameOver = false;
   isGameRunning = true;
   isPaused = false;
+  bonusFood = null;
+  clearTimeout(bonusTimeout);
   
-  // Update UI
   startScreen.classList.add("hidden");
   gameOverScreen.classList.add("hidden");
   document.getElementById("pause-btn").innerText = "Pause";
@@ -157,14 +182,13 @@ function startGame() {
 function showGameOver() {
   isGameRunning = false;
   finalScoreEl.innerText = score;
+  playTone(200, 'sawtooth', 0.5);
   
-  // Save High Score to local browser storage
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('snakeHighScore', highScore);
     highScoreEl.innerText = highScore;
   }
-  
   gameOverScreen.classList.remove("hidden");
 }
 
@@ -174,43 +198,28 @@ function togglePause() {
   document.getElementById("pause-btn").innerText = isPaused ? "Resume" : "Pause";
 }
 
-// --- Input Handling ---
-// We store previous input to prevent the snake from reversing into itself instantly
 let lastInputDirection = { x: 0, y: -1 };
-
 function handleInput(direction) {
-  if (direction === 'UP' && lastInputDirection.y !== 1) {
-    inputDirection = { x: 0, y: -1 };
-  } else if (direction === 'DOWN' && lastInputDirection.y !== -1) {
-    inputDirection = { x: 0, y: 1 };
-  } else if (direction === 'LEFT' && lastInputDirection.x !== 1) {
-    inputDirection = { x: -1, y: 0 };
-  } else if (direction === 'RIGHT' && lastInputDirection.x !== -1) {
-    inputDirection = { x: 1, y: 0 };
-  }
+  if (direction === 'UP' && lastInputDirection.y !== 1) inputDirection = { x: 0, y: -1 };
+  else if (direction === 'DOWN' && lastInputDirection.y !== -1) inputDirection = { x: 0, y: 1 };
+  else if (direction === 'LEFT' && lastInputDirection.x !== 1) inputDirection = { x: -1, y: 0 };
+  else if (direction === 'RIGHT' && lastInputDirection.x !== -1) inputDirection = { x: 1, y: 0 };
   lastInputDirection = inputDirection;
 }
 
-// Keyboard Listeners
 window.addEventListener('keydown', e => {
   switch (e.key) {
     case 'ArrowUp': handleInput('UP'); break;
     case 'ArrowDown': handleInput('DOWN'); break;
     case 'ArrowLeft': handleInput('LEFT'); break;
     case 'ArrowRight': handleInput('RIGHT'); break;
-    case ' ': // Spacebar for pause
-    case 'Escape': 
-      togglePause(); 
-      break;
+    case ' ': case 'Escape': togglePause(); break;
   }
 });
 
-// Button Listeners
 document.getElementById("start-btn").addEventListener("click", startGame);
 document.getElementById("restart-btn").addEventListener("click", startGame);
 document.getElementById("pause-btn").addEventListener("click", togglePause);
-
-// Mobile D-Pad Listeners
 document.getElementById("btn-up").addEventListener("touchstart", (e) => { e.preventDefault(); handleInput('UP'); });
 document.getElementById("btn-down").addEventListener("touchstart", (e) => { e.preventDefault(); handleInput('DOWN'); });
 document.getElementById("btn-left").addEventListener("touchstart", (e) => { e.preventDefault(); handleInput('LEFT'); });
